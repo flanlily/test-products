@@ -8,8 +8,6 @@ const urlsToCache = [
   '/manifest.json',
   '/dungeonData.json',
   '/announcements.json',
-  '/media-list.json',
-  // 注意: media_*.png ファイルは動的に増えるため、ここではキャッシュしない
 ];
 
 // インストール処理
