@@ -1,4 +1,4 @@
-/* ▼▼▼ カラー変数と基本設定 (Light Novel Dataより移植) ▼▼▼ */
+/* ▼▼▼ カラー変数と基本設定 ▼▼▼ */
 :root {
     --bg-color: #0d1117;        /* 背景色 */
     --card-bg: #161b22;         /* カード背景 */
@@ -19,19 +19,19 @@ body {
     margin: 0;
     /* 背景色はダークテーマ変数を適用 */
     background-color: var(--bg-color);
-    color: var(--text-main); /* 文字色も白系に */
+    color: var(--text-main);
     min-height: 100vh;
     display: block;
     padding: 12px 12px 40px 12px;
 
-    /* 背景画像設定（既存維持） */
+    /* 背景画像設定 */
     background-repeat: no-repeat;
     background-size: cover;
     background-position: center center;
     background-attachment: fixed;
 }
 
-/* ▼▼▼ 修正：ログイン画面スタイル (Dark Theme) ▼▼▼ */
+/* ▼▼▼ ログイン画面スタイル (自動中央配置) ▼▼▼ */
 #login-view {
     position: fixed;
     top: 0;
@@ -40,11 +40,13 @@ body {
     height: 100%;
     background-color: var(--bg-color); /* ダーク背景 */
     z-index: 9999;
+    
+    /* ★ここが自動中央揃えの設定★ */
     display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 20px;
+    justify-content: center; /* 左右中央 */
+    align-items: center;     /* 上下中央 */
 }
+
 #login-view.hidden {
     display: none !important;
 }
@@ -52,78 +54,92 @@ body {
 .login-box {
     background-color: var(--card-bg);
     border: 1px solid var(--border-color);
-    padding: 40px;
+    padding: 32px;
     border-radius: 8px;
     text-align: center;
-    width: 100%;
-    max-width: 400px;
     box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    box-sizing: border-box;
+
+    /* ★端末サイズに合わせた幅調整★ */
+    width: 90%;
+    max-width: 350px;
 }
 
 .login-box h2 {
-    margin-bottom: 20px;
     color: var(--accent-color);
-    font-size: 1.5rem;
-    border-bottom: none; /* 既存スタイルの打ち消し */
-    display: block;      /* 既存スタイルの打ち消し */
-}
-
-.login-box p {
-    color: var(--text-sub);
-    margin-bottom: 20px;
-}
-
-.login-box input {
+    margin-bottom: 8px;
+    margin-top: 0;
+    font-size: 1.5em;
+    font-weight: 600;
+    border-bottom: none;
     display: block;
+}
+
+.login-subtext {
+    color: var(--text-sub);
+    font-size: 0.85em;
+    margin-bottom: 24px;
+    margin-top: 0;
+}
+
+.login-box .input-group {
+    margin-bottom: 16px;
     width: 100%;
-    margin-bottom: 15px;
-    padding: 12px;
-    background-color: var(--bg-color);
-    border: 1px solid var(--border-color);
-    color: var(--text-main);
+}
+
+.login-box input[type="text"],
+.login-box input[type="password"] {
+    width: 100%;
+    padding: 10px 12px;
+    background: #ffffff; /* 入力欄は白 */
+    border: 1px solid #d0d7de;
+    color: #24292f;
     border-radius: 6px;
-    font-size: 1rem;
+    font-size: 16px; /* スマホでのズーム防止 */
     box-sizing: border-box;
+    outline: none;
+    transition: border 0.2s, box-shadow 0.2s;
+    display: block;
 }
 
 .login-box input:focus {
-    border-color: var(--accent-color);
-    outline: none;
+    border-color: #0969da;
+    box-shadow: 0 0 0 3px rgba(9,105,218,0.3);
 }
 
 .login-box button {
-    background-color: var(--success-color); /* 緑色ボタン */
+    background-color: var(--success-color); /* 緑ボタン */
     color: white;
-    border: none;
-    padding: 12px;
+    border: 1px solid rgba(27,31,35,0.15);
+    padding: 10px;
     border-radius: 6px;
     cursor: pointer;
-    font-weight: bold;
+    font-weight: 600;
     width: 100%;
-    font-size: 1rem;
-    transition: 0.2s;
-    margin-top: 0; /* 既存調整 */
+    font-size: 14px;
+    transition: background 0.2s;
+    margin-top: 8px;
 }
 
 .login-box button:hover {
-    opacity: 0.9;
+    background-color: #2ea043;
 }
 
 .login-box button:disabled {
-    background-color: var(--border-color);
+    background-color: #94d3a2;
     cursor: not-allowed;
 }
 
 #login-msg {
     color: var(--danger-color);
-    margin-top: 15px;
-    font-size: 0.9em;
+    margin-top: 16px;
+    font-size: 0.85em;
     min-height: 1.2em;
 }
 /* ▲▲▲ ログイン画面スタイルここまで ▲▲▲ */
 
 
-/* ===== 以下、計算ツール本体のスタイル (ダークモード対応調整済み) ===== */
+/* ===== 計算ツール本体のスタイル (ダークテーマ適用版) ===== */
 
 .notification-sync-bar {
     position: fixed;
@@ -136,14 +152,13 @@ body {
     flex-wrap: nowrap;
 }
 
-/* コンテナを少し上に */
+/* コンテナ設定 */
 .container {
     margin-top: 18px;
     max-width: 95vw;
     width: 100%;
     margin: 0 auto;
-    /* 背景をダークカード色に合わせる */
-    background: rgba(22, 27, 34, 0.9); 
+    background: rgba(22, 27, 34, 0.95); /* ダークな透過背景 */
     padding: 18px 8px 28px 8px;
     border-radius: 16px;
     box-shadow: 0 4px 24px rgba(0,0,0,0.4);
@@ -189,7 +204,7 @@ button, a {
     display: block;
     margin-bottom: 4px;
     font-weight: bold;
-    color: var(--accent-color); /* 青アクセント */
+    color: var(--accent-color);
     word-break: break-word;
 }
 
@@ -200,7 +215,6 @@ button, a {
     border: 1px solid var(--border-color);
     border-radius: 6px;
     font-size: 17px;
-    /* 入力欄もダークに */
     background: var(--bg-color);
     color: var(--text-main);
     margin-bottom: 2px;
@@ -217,7 +231,7 @@ button, a {
 /* 共通ボタンスタイル */
 #syncButton,
 #external-links-button {
-    background: #21262d; /* ダークボタン */
+    background: #21262d;
     color: var(--accent-color);
     border: 1px solid var(--border-color);
     border-radius: 7px;
@@ -335,7 +349,7 @@ button, a {
     #syncButton, #external-links-button { font-size: 0.92em; padding: 6px 7px; }
 }
 
-/* お知らせ機能・ポップアップ（色味をダークに調整） */
+/* お知らせ機能・ポップアップ */
 .notification-icon {
     width: 40px;
     height: 40px;
@@ -415,7 +429,7 @@ button, a {
     cursor: pointer;
 }
 
-/* 外部リンクポップアップ調整 */
+/* 外部リンクポップアップ */
 #links-popup .popup-content {
     background: #161b22;
 }
