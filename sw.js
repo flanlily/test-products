@@ -1,13 +1,14 @@
 const CACHE_NAME = 'pazu-cal-cache-v1';
 // キャッシュするファイルのリスト
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/script.js', // script.jsに変更
-  '/style.css',
-  '/manifest.json',
-  '/dungeonData.json',
-  '/announcements.json',
+  './',
+  './index.html',
+  './script.js',
+  './style.css',
+  './manifest.json',
+  './dungeonData.json',
+  './announcements.json',
+  './20260206.png' // ← これを追加！
 ];
 
 // インストール処理
