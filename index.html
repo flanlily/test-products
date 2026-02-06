@@ -5,7 +5,7 @@
         <meta content="width=device-width, initial-scale=1" name="viewport" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
         <link href="style.css" rel="stylesheet" />
-        <title>PDC非対応計算ツール</title>
+        <title>β版 割合計算ツール(TP版)</title>
         <link href="./manifest.json" rel="manifest" />
         <meta content="#0d1117" name="theme-color" />
         <link rel="apple-touch-startup-image" href="20250922.png" />
@@ -15,9 +15,15 @@
         <div id="login-view">
             <div class="login-box">
                 <h2><i class="fa-solid fa-lock"></i> Restricted Access</h2>
-                <p>認証情報を入力してください</p>
-                <input type="text" id="login-id" placeholder="User ID">
-                <input type="password" id="login-pass" placeholder="Password">
+                <p class="login-subtext">認証情報を入力してください</p>
+                
+                <div class="input-group">
+                    <input type="text" id="login-id" placeholder="User ID" autocomplete="off">
+                </div>
+                <div class="input-group">
+                    <input type="password" id="login-pass" placeholder="Password">
+                </div>
+                
                 <button id="login-button">Login</button>
                 <p id="login-msg"></p>
             </div>
@@ -69,7 +75,7 @@
             </div>
 
             <div class="container">
-                <h1>β版 割合計算ツール(TP版)</h1>
+                <h2>β版 割合計算ツール(TP版)</h2>
                 <div class="tabs">
                     <button class="tab-button active" data-tab="damage">割合計算</button>
                 </div>
