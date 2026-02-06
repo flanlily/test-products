@@ -1,3 +1,6 @@
+// GASのウェブアプリURL (バックエンド)
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwFZngodQAmIV5QWtwouxiqli44onOg_N6H641WYHP2eBANZxFeeF98luvu56sw1v9-Yw/exec';
+
 document.addEventListener('DOMContentLoaded', () => {
 
     // モバイルでの長押しによるコンテキストメニュー（コピー等）を
@@ -10,7 +13,15 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (err) { /* ignore */ }
     }, { passive: false });
 
-    // ----------- HTML要素取得 -----------
+    // ----------- HTML要素取得 (ログイン画面用) -----------
+    const loginView = document.getElementById('login-view');
+    const appView = document.getElementById('app-view');
+    const loginBtn = document.getElementById('login-button');
+    const loginIdInput = document.getElementById('login-id');
+    const loginPassInput = document.getElementById('login-pass');
+    const loginMsg = document.getElementById('login-msg');
+
+    // ----------- HTML要素取得 (アプリ本体用) -----------
     const dungeonSelect = document.getElementById('dungeonSelect');
     const floorSelect = document.getElementById('floorSelect');
     const inputA = document.getElementById('inputA');
@@ -20,11 +31,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const totalReductionRateDisplay = document.getElementById('totalReductionRate');
     const resultsTableBody = document.querySelector('#resultsTable tbody');
 
-    // 経験値/HP関連の要素は削除されました
-
     const tabs = document.querySelectorAll('.tab-button');
     const tabContents = document.querySelectorAll('.tab-content');
-    // タブ選択で自動スクロールするかどうか（false にして自動スクロールを無効化）
     const AUTO_SCROLL_ON_TAB = false;
 
     const notificationIcon = document.getElementById('notificationIcon');
@@ -34,20 +42,123 @@ document.addEventListener('DOMContentLoaded', () => {
     const popupCloseButton = document.getElementById('popupCloseButton');
     const notificationList = document.getElementById('notification-list');
 
-    // 存在しない場合もあるのでnull許容で取得
     const linksPopupButton = document.getElementById('external-links-button');
     const linksPopup = document.getElementById('links-popup');
     const linksPopupOverlay = document.getElementById('links-popup-overlay');
     const linksPopupCloseButton = document.getElementById('links-popup-close-button');
 
-    const syncButton = document.getElementById('syncButton');
+    const syncButton = document.getElementById('syncButton'); // ログアウトボタンとして使用
 
     let damageDungeonData = {};
     let latestNotificationDate = '';
-
     let damageTabInitialized = false;
 
-    // ----------- データ読み込み -----------
+    // =========== GAS連携・認証関連処理 ===========
+
+    // GASへのPOST送信ヘルパー
+    async function postToGAS(action, payload = {}) {
+        const params = {
+            method: "POST",
+            // CORS対策のため text/plain で送り GAS側で JSON.parse させる
+            headers: { "Content-Type": "text/plain" },
+            body: JSON.stringify({ action: action, ...payload })
+        };
+        try {
+            const res = await fetch(GAS_API_URL, params);
+            return await res.json();
+        } catch (e) {
+            console.error(e);
+            return { success: false, message: '通信エラーが発生しました' };
+        }
+    }
+
+    // セッションチェック (起動時)
+    async function checkSession() {
+        const userId = localStorage.getItem('pazu_user_id');
+        const token = localStorage.getItem('pazu_token');
+
+        if (userId && token) {
+            try {
+                // ハートビート送信 (有効性チェック & 更新)
+                const res = await postToGAS('heartbeat', { id: userId, token: token });
+                if (res.status === 'ok') {
+                    showApp(); // 認証OK
+                } else {
+                    showLogin('セッションが切れました。再ログインしてください。');
+                }
+            } catch (e) {
+                showLogin('通信エラー。オフラインかサーバーダウンです。');
+            }
+        } else {
+            showLogin();
+        }
+    }
+
+    // アプリ画面の表示
+    function showApp() {
+        if (loginView) loginView.classList.add('hidden');
+        if (appView) appView.classList.remove('hidden');
+        // アプリ表示後に初期化処理を実行
+        initializeAll();
+    }
+
+    // ログイン画面の表示
+    function showLogin(msg = '') {
+        if (loginView) loginView.classList.remove('hidden');
+        if (appView) appView.classList.add('hidden');
+        if (loginMsg && msg) loginMsg.textContent = msg;
+    }
+
+    // ログインボタンクリック時の処理
+    if (loginBtn) {
+        loginBtn.addEventListener('click', async () => {
+            const id = loginIdInput.value;
+            const pass = loginPassInput.value;
+            if (!id || !pass) {
+                loginMsg.textContent = 'IDとパスワードを入力してください';
+                return;
+            }
+
+            loginBtn.disabled = true;
+            loginMsg.textContent = '認証中...';
+
+            const res = await postToGAS('login', { id: id, pass: pass });
+            
+            loginBtn.disabled = false;
+            if (res.success) {
+                // 成功したらトークン保存
+                localStorage.setItem('pazu_user_id', id);
+                localStorage.setItem('pazu_token', res.token);
+                loginMsg.textContent = '';
+                showApp();
+            } else {
+                loginMsg.textContent = res.message || 'ログイン失敗';
+            }
+        });
+    }
+
+    // ログアウトボタン処理 (旧・同期ボタン)
+    if (syncButton) {
+        syncButton.textContent = '🚪 ログアウト';
+        syncButton.addEventListener('click', async () => {
+            if(!confirm('ログアウトしますか？')) return;
+            
+            const userId = localStorage.getItem('pazu_user_id');
+            const token = localStorage.getItem('pazu_token');
+            
+            // GASへログアウト通知
+            await postToGAS('logout', { id: userId, token: token });
+            
+            // ローカル情報を削除してリロード
+            localStorage.removeItem('pazu_user_id');
+            localStorage.removeItem('pazu_token');
+            location.reload();
+        });
+    }
+
+    // =========== 以下、既存のアプリロジック ===========
+
+    // データ読み込み
     async function fetchData(url) {
         try {
             const response = await fetch(`${url}?t=${new Date().getTime()}`);
@@ -55,16 +166,14 @@ document.addEventListener('DOMContentLoaded', () => {
             return await response.json();
         } catch (error) {
             console.error(error);
-            // alert(error.message); // エラー表示は開発時以外コメントアウト推奨
             return null; // エラー時はnullを返す
         }
     }
 
-    // ----------- 背景画像のランダム設定 -----------
+    // 背景画像のランダム設定
     async function setRandomBackground() {
         try {
             const backgroundImages = await fetchData('./media-list.json');
-            // fetchDataがnullを返す可能性があるのでチェック
             if (!backgroundImages || backgroundImages.length === 0) {
                 console.warn('背景画像リストが見つからないか空です。');
                 return;
@@ -77,7 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // ----------- タブ切り替え処理 -----------
+    // タブ切り替え処理
     function setupTabs() {
         tabs.forEach(tab => {
             tab.addEventListener('click', () => {
@@ -88,17 +197,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     tc.classList.toggle('hidden', tc.id !== targetId);
                 });
 
-                // 各タブの初回クリック時に初期化処理を実行
                 if (targetId === 'damage' && !damageTabInitialized) setupDamageTab();
-                // 表示したコンテンツをスクロールして上部に揃える（固定ヘッダ分を考慮）
-                // 自動スクロールが不要なためデフォルトでは無効化しています
+                
                 const showContent = document.getElementById(targetId);
                 if (showContent && AUTO_SCROLL_ON_TAB) scrollContentIntoView(showContent);
             });
         });
     }
 
-    // 固定ヘッダ等を考慮して要素を上部にスクロールするヘルパー
+    // スクロールヘルパー
     function scrollContentIntoView(el) {
         try {
             const headerBar = document.querySelector('.notification-sync-bar');
@@ -111,29 +218,29 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // ----------- 各タブの初期化 -----------
+    // ダメージ計算タブ初期化
     function setupDamageTab() {
         if (damageTabInitialized) return;
-        // イベントリスナー設定
         [dungeonSelect, floorSelect, inputA, inputB, inputC, inputL].forEach(el => {
-            el.addEventListener('change', runDamageCalculation);
-            if (el.tagName === 'INPUT') el.addEventListener('input', runDamageCalculation);
+            if(el) {
+                el.addEventListener('change', runDamageCalculation);
+                if (el.tagName === 'INPUT') el.addEventListener('input', runDamageCalculation);
+            }
         });
-        // 初期計算実行
         runDamageCalculation();
         damageTabInitialized = true;
     }
 
-    // 経験値/HPタブは削除されました
-
-    // ----------- 計算処理 -----------
+    // 計算処理
     function runDamageCalculation() {
+        if (!dungeonSelect || !floorSelect) return;
+        
         const selectedDungeon = dungeonSelect.value;
         const selectedFloor = floorSelect.value;
-        resultsTableBody.innerHTML = ''; // 計算結果をクリア
+        resultsTableBody.innerHTML = ''; 
 
         if (!selectedDungeon || !selectedFloor) {
-            totalReductionRateDisplay.textContent = ''; // 総軽減率表示もクリア
+            totalReductionRateDisplay.textContent = ''; 
             return;
         }
 
@@ -149,27 +256,27 @@ document.addEventListener('DOMContentLoaded', () => {
         const totalReduce = Math.max(0, leaderReduce * friendReduce * skillReduce * lReduce);
         totalReductionRateDisplay.textContent = `総軽減率: ${((1 - totalReduce) * 100).toFixed(2)}%`;
 
-        const damageData = damageDungeonData[selectedDungeon][selectedFloor];
-        // データが文字列の場合、数値の配列に変換。それ以外（配列など）ならそのまま使うか空配列に。
-        const damageRatios = typeof damageData === 'string'
-            ? damageData.split(',').map(s => parseFloat(s.replace('%', '')))
-            : (Array.isArray(damageData) ? damageData : []);
+        if (damageDungeonData && damageDungeonData[selectedDungeon]) {
+            const damageData = damageDungeonData[selectedDungeon][selectedFloor];
+            const damageRatios = typeof damageData === 'string'
+                ? damageData.split(',').map(s => parseFloat(s.replace('%', '')))
+                : (Array.isArray(damageData) ? damageData : []);
 
-        damageRatios.forEach(ratio => {
-            if (isNaN(ratio)) return; // 無効なデータはスキップ
-            const finalDamagePercent = (ratio * totalReduce).toFixed(2);
-            const canSurvive = finalDamagePercent < 100;
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${ratio}%</td>
-                <td>${finalDamagePercent}%</td>
-                <td class="${canSurvive ? 'can-withstand' : 'cannot-withstand'}">${canSurvive ? '耐えられる' : '耐えられない'}</td>
-            `;
-            resultsTableBody.appendChild(tr);
-        });
+            damageRatios.forEach(ratio => {
+                if (isNaN(ratio)) return; 
+                const finalDamagePercent = (ratio * totalReduce).toFixed(2);
+                const canSurvive = finalDamagePercent < 100;
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${ratio}%</td>
+                    <td>${finalDamagePercent}%</td>
+                    <td class="${canSurvive ? 'can-withstand' : 'cannot-withstand'}">${canSurvive ? '耐えられる' : '耐えられない'}</td>
+                `;
+                resultsTableBody.appendChild(tr);
+            });
+        }
     }
 
-    // ユーティリティ: 文字列から数値を安全に取り出す（カンマ・単位などを除去）
     function parseNumberFromString(value, fallback = NaN) {
         if (value === null || value === undefined) return fallback;
         if (typeof value === 'number') return value;
@@ -178,24 +285,21 @@ document.addEventListener('DOMContentLoaded', () => {
         return isNaN(n) ? fallback : n;
     }
 
-    // 経験値計算ロジックは削除されました
-
-// HP計算機能は削除されました
-
-    // ----------- ポップアップと同期ボタンの処理 -----------
+    // ポップアップと外部リンクボタン処理
     function setupPopupsAndSync() {
-        notificationIcon.addEventListener('click', () => {
-            notificationPopup.classList.remove('hidden');
-            notificationBadge.classList.add('hidden');
-            notificationIcon.classList.remove('active');
-            if (latestNotificationDate) {
-                localStorage.setItem('lastReadNotificationDate', latestNotificationDate);
-            }
-        });
-        popupOverlay.addEventListener('click', () => notificationPopup.classList.add('hidden'));
-        popupCloseButton.addEventListener('click', () => notificationPopup.classList.add('hidden'));
+        if(notificationIcon) {
+            notificationIcon.addEventListener('click', () => {
+                notificationPopup.classList.remove('hidden');
+                notificationBadge.classList.add('hidden');
+                notificationIcon.classList.remove('active');
+                if (latestNotificationDate) {
+                    localStorage.setItem('lastReadNotificationDate', latestNotificationDate);
+                }
+            });
+        }
+        if(popupOverlay) popupOverlay.addEventListener('click', () => notificationPopup.classList.add('hidden'));
+        if(popupCloseButton) popupCloseButton.addEventListener('click', () => notificationPopup.classList.add('hidden'));
 
-        // 存在する場合のみイベント登録
         if (linksPopupButton && linksPopup) {
             linksPopupButton.addEventListener('click', () => linksPopup.classList.remove('hidden'));
         }
@@ -206,38 +310,19 @@ document.addEventListener('DOMContentLoaded', () => {
             linksPopupCloseButton.addEventListener('click', () => linksPopup.classList.add('hidden'));
         }
 
-        syncButton.addEventListener('click', async () => {
-            syncButton.disabled = true;
-            syncButton.textContent = '同期中...';
-
-            const activeTab = document.querySelector('.tab-button.active');
-            if (activeTab) {
-                localStorage.setItem('lastActiveTab', activeTab.dataset.tab);
-            }
-            if ('caches' in window) {
-                const names = await caches.keys();
-                await Promise.all(names.map(name => caches.delete(name)));
-            }
-            // Service Workerの登録解除（必要であれば）
-            if ('serviceWorker' in navigator) {
-                const registration = await navigator.serviceWorker.getRegistration();
-                if (registration) {
-                    await registration.unregister();
-                }
-            }
-            location.reload(true); // 強制リロード
-        });
+        // ※旧syncButtonのロジックはここで設定せず、上のログアウト処理部分で設定済み
     }
 
+    // お知らせ取得
     async function fetchAndShowNotifications() {
         try {
             const notifications = await fetchData('./announcements.json');
-             // fetchDataがnullを返す可能性があるのでチェック
             if (!notifications || !Array.isArray(notifications)) {
-                notificationList.innerHTML = '<p>お知らせの読み込みに失敗しました。</p>';
+                if(notificationList) notificationList.innerHTML = '<p>お知らせの読み込みに失敗しました。</p>';
                 return;
             }
-            notificationList.innerHTML = ''; // リストをクリア
+            if(notificationList) notificationList.innerHTML = '';
+            
             if (notifications.length > 0) {
                 latestNotificationDate = notifications[0].date;
                 const lastReadDate = localStorage.getItem('lastReadNotificationDate');
@@ -247,103 +332,98 @@ document.addEventListener('DOMContentLoaded', () => {
                     const div = document.createElement('div');
                     div.className = 'notification-item';
                     div.innerHTML = `<strong>${item.date}</strong><p>${item.content}</p>`;
-                    notificationList.appendChild(div);
+                    if(notificationList) notificationList.appendChild(div);
                     if (!lastReadDate || item.date > lastReadDate) unreadCount++;
                 });
 
-                notificationBadge.classList.toggle('hidden', unreadCount === 0);
-                notificationIcon.classList.toggle('active', unreadCount > 0);
-                if (unreadCount > 0) notificationBadge.textContent = unreadCount;
+                if(notificationBadge) {
+                    notificationBadge.classList.toggle('hidden', unreadCount === 0);
+                    if (unreadCount > 0) notificationBadge.textContent = unreadCount;
+                }
+                if(notificationIcon) notificationIcon.classList.toggle('active', unreadCount > 0);
             } else {
-                notificationList.innerHTML = '<p>新しいお知らせはありません。</p>';
-                notificationBadge.classList.add('hidden'); // お知らせがない場合もバッジを隠す
-                notificationIcon.classList.remove('active');
+                if(notificationList) notificationList.innerHTML = '<p>新しいお知らせはありません。</p>';
+                if(notificationBadge) notificationBadge.classList.add('hidden');
+                if(notificationIcon) notificationIcon.classList.remove('active');
             }
         } catch (error) {
             console.error('お知らせ取得エラー:', error);
-            notificationList.innerHTML = '<p>お知らせの読み込みに失敗しました。</p>';
+            if(notificationList) notificationList.innerHTML = '<p>お知らせの読み込みに失敗しました。</p>';
         }
     }
 
-    // ----------- 初期化処理 -----------
+    // ----------- 初期化処理 (ログイン後に呼ばれる) -----------
     async function initializeAll() {
-        await setRandomBackground();
+        // 重複実行防止
+        if (window.appInitialized) return;
+        window.appInitialized = true;
 
-        // データの取得を待つ
+        await setRandomBackground();
         damageDungeonData = await fetchData('./dungeonData.json');
 
-        // ▼▼▼【ここから修正】▼▼▼
         // プルダウンの初期化関数
         function initializeSelectWithOptions(selectElement, placeholderText, data) {
-            selectElement.innerHTML = `<option value="">${placeholderText}</option>`; // プレースホルダーを追加
+            if (!selectElement) return;
+            selectElement.innerHTML = `<option value="">${placeholderText}</option>`;
             if (data && typeof data === 'object') {
                 Object.keys(data).forEach(name => selectElement.add(new Option(name, name)));
-                selectElement.disabled = false; // データがあれば有効化
+                selectElement.disabled = false;
             } else {
-                selectElement.disabled = true; // データがなければ無効化
+                selectElement.disabled = true;
             }
+        }
+
+        function initializeSelect(selectElement, placeholderText) {
+            if (!selectElement) return;
+            selectElement.innerHTML = `<option value="">${placeholderText}</option>`;
+            selectElement.disabled = true;
         }
 
         // ダメージ計算タブのプルダウン初期化
         initializeSelectWithOptions(dungeonSelect, 'ダンジョンを選択してください', damageDungeonData);
-        initializeSelect(floorSelect, 'フロアを選択してください'); // フロアはダンジョン選択後に有効化
-
-        // 経験値計算タブは削除されました
-        // ▲▲▲【ここまで修正】▲▲▲
+        initializeSelect(floorSelect, 'フロアを選択してください');
 
         // ダンジョン選択時のイベントリスナー
-        dungeonSelect.addEventListener('change', () => {
-            const selectedDungeon = dungeonSelect.value;
-            initializeSelect(floorSelect, 'フロアを選択してください'); // フロアをリセット
-            if (selectedDungeon && damageDungeonData[selectedDungeon]) {
-                Object.keys(damageDungeonData[selectedDungeon]).forEach(name => floorSelect.add(new Option(name, name)));
-                floorSelect.disabled = false;
-            } else {
-                floorSelect.disabled = true;
-            }
-             runDamageCalculation(); // ダンジョン変更時も計算実行
-        });
-
-        // 経験値イベントは削除されました
-
-        // 補助的な初期化関数（プレースホルダーのみ設定）
-        function initializeSelect(selectElement, placeholderText) {
-             selectElement.innerHTML = `<option value="">${placeholderText}</option>`;
-             selectElement.disabled = true;
+        if (dungeonSelect) {
+            dungeonSelect.addEventListener('change', () => {
+                const selectedDungeon = dungeonSelect.value;
+                initializeSelect(floorSelect, 'フロアを選択してください');
+                if (selectedDungeon && damageDungeonData && damageDungeonData[selectedDungeon]) {
+                    Object.keys(damageDungeonData[selectedDungeon]).forEach(name => floorSelect.add(new Option(name, name)));
+                    floorSelect.disabled = false;
+                } else {
+                    floorSelect.disabled = true;
+                }
+                runDamageCalculation();
+            });
         }
-
 
         setupTabs();
         setupPopupsAndSync();
 
-        // 前回表示していたタブを復元、またはデフォルトタブを表示
+        // タブ復元ロジック
         const lastTab = localStorage.getItem('lastActiveTab');
         let initialTab = null;
         if (lastTab) {
             initialTab = document.querySelector(`.tab-button[data-tab="${lastTab}"]`);
         }
         if (!initialTab) {
-            // .tab-buttonのうち最初のものをデフォルトに
             initialTab = document.querySelector('.tab-button');
         }
-        // すべてのタブ内容を一旦非表示
         document.querySelectorAll('.tab-content').forEach(tc => tc.classList.add('hidden'));
-        // 初期タブをアクティブ化
         if (initialTab) {
             document.querySelectorAll('.tab-button').forEach(t => t.classList.remove('active'));
             initialTab.classList.add('active');
             const targetId = initialTab.dataset.tab;
             const showContent = document.getElementById(targetId);
             if (showContent) showContent.classList.remove('hidden');
-            // 初期化も実行
             if (targetId === 'damage' && !damageTabInitialized) setupDamageTab();
-            // 初期表示時にもスクロール位置を調整（必要なら有効化する）
-            if (showContent && AUTO_SCROLL_ON_TAB) scrollContentIntoView(showContent);
         }
-        localStorage.removeItem('lastActiveTab'); // 復元後は削除
+        localStorage.removeItem('lastActiveTab');
 
         fetchAndShowNotifications();
     }
 
-    initializeAll();
+    // 起動時にまずセッションを確認する
+    checkSession();
 });
