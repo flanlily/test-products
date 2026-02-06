@@ -12,128 +12,79 @@
     </head>
 
     <body>
-        <div class="notification-sync-bar">
-            <div class="notification-icon" id="notificationIcon">
-                <span class="notification-badge hidden" id="notificationBadge"></span>
-            </div>
-
-            <!-- 外部リンクを開くボタン -->
-            <button id="external-links-button" title="外部リンクを表示">🔗 外部リンク</button>
-
-            <button id="syncButton">🔄 データ同期</button>
-        </div>
-
-        <div class="popup-wrapper hidden" id="notificationPopup">
-            <div class="popup-overlay" id="popupOverlay"></div>
-            <div class="popup-content">
-                <h2>お知らせ</h2>
-                <div id="notification-list"></div>
-                <button id="popupCloseButton">閉じる</button>
+        <div id="login-view">
+            <div class="login-box">
+                <h2>ログイン</h2>
+                <div class="input-group">
+                    <label>ID</label>
+                    <input type="text" id="login-id" placeholder="ユーザーID">
+                </div>
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" id="login-pass" placeholder="パスワード">
+                </div>
+                <button id="login-button">ログイン</button>
+                <p id="login-msg" style="color: #ffcccc; margin-top: 10px; font-size: 0.9em;"></p>
             </div>
         </div>
+        <div id="app-view" class="hidden">
+            
+            <div class="notification-sync-bar">
+                <div class="notification-icon" id="notificationIcon">
+                    <span class="notification-badge hidden" id="notificationBadge"></span>
+                </div>
+                <button id="external-links-button" title="外部リンクを表示">🔗 外部リンク</button>
+                <button id="syncButton">ログアウト</button> </div>
 
-        <!-- 外部リンク用ポップアップ -->
-        <div class="popup-wrapper hidden" id="links-popup" aria-hidden="true">
-            <div class="popup-overlay" id="links-popup-overlay"></div>
-            <div class="popup-content" role="dialog" aria-labelledby="links-popup-title">
-                <h2 id="links-popup-title">外部リンク</h2>
-                <div id="links-popup-list" style="margin-bottom:16px;">
-                    <p style="margin:0 0 8px 0;">便利な外部リソース：</p>
-
-                    <h3 style="margin:8px 0 4px 0;color:#bbdefb;font-size:1em;">sanbon氏制作ツール</h3>
-                    <ul style="padding-left:18px; margin:0 0 12px 0;">
-                        <li><a href="https://sanbon.me/jp/resources/awoken" target="_blank" rel="noopener noreferrer">覚醒スキル</a></li>
-                        <li><a href="https://sanbon.me/jp/resources/latent-awoken" target="_blank" rel="noopener noreferrer">潜在パズル</a></li>
-                        <li><a href="https://sanbon.me/jp/resources/badge" target="_blank" rel="noopener noreferrer">バッジ</a></li>
-                        <li><a href="https://sanbon.me/jp/resources/egg-simulator" target="_blank" rel="noopener noreferrer">ガチャシミュレーター</a></li>
-                        <li><a href="https://sanbon.me/jp/resources/probability-simulator" target="_blank" rel="noopener noreferrer">ガチャ確率計算機</a></li>
-                        <li><a href="https://sanbon.me/jp/resources/tier-maker" target="_blank" rel="noopener noreferrer">ティアメーカー</a></li>
-                        <li><a href="https://sanbon.me/jp/resources/puzzle" target="_blank" rel="noopener noreferrer">パズル練習</a></li>
-                    </ul>
-
-                    <h3 style="margin:8px 0 4px 0;color:#bbdefb;font-size:1em;">Twitter（旧X）</h3>
-                    <ul style="padding-left:18px; margin:0 0 12px 0;">
-                        <li><a href="https://x.com/pad_sexy" target="_blank" rel="noopener noreferrer">Twitter - ムラコ</a></li>
-                        <li><a href="https://x.com/DaikeYamamoto" target="_blank" rel="noopener noreferrer">Twitter - ダイケ</a></li>
-                        <li><a href="https://x.com/sarna_flanlily" target="_blank" rel="noopener noreferrer">Twitter - ツール制作者</a></li>
-                    </ul>
-
-                    <p style="margin:0;color:#bbdefb;font-size:0.9em;">リンクは新しいタブで開きます。</p>
-                </div>
-                <button id="links-popup-close-button">閉じる</button>
-            </div>
-        </div>
-
-        <div class="container">
-            <h1>PDC非対応計算ツール</h1>
-
-            <div class="tabs">
-                <button class="tab-button active" data-tab="damage">割合計算</button>
-            </div>
-            <div class="tab-content" id="damage">
-                <div class="input-group">
-                    <label for="dungeonSelect">ダンジョン選択:</label>
-                    <select id="dungeonSelect"></select>
-                </div>
-                <div class="input-group">
-                    <label for="floorSelect">フロア選択:</label>
-                    <select id="floorSelect"></select>
-                </div>
-                <div class="input-group">
-                    <label for="inputA">リーダー軽減率 (A) 例: 50%軽減→0.5 , 20%軽減→0.2</label>
-                    <input id="inputA" max="1" min="0" step="0.01" type="number" value="0" />
-                </div>
-                <div class="input-group">
-                    <label for="inputB">助っ人軽減率 (B) 例: 50%軽減→0.5 , 20%軽減→0.2</label>
-                    <input id="inputB" max="1" min="0" step="0.01" type="number" value="0" />
-                </div>
-                <div class="input-group">
-                    <label for="inputC">軽減スキル (C)</label>
-                    <select id="inputC">
-                        <option value="0">0%</option>
-                        <option value="0.05">5%</option>
-                        <option value="0.1">10%</option>
-                        <option value="0.15">15%</option>
-                        <option value="0.2">20%</option>
-                        <option value="0.25">25%</option>
-                        <option value="0.3">30%</option>
-                        <option value="0.35">35%</option>
-                        <option value="0.4">40%</option>
-                        <option value="0.45">45%</option>
-                        <option value="0.5">50%</option>
-                        <option value="0.6">60%</option>
-                        <option value="0.65">65%</option>
-                        <option value="0.7">70%</option>
-                        <option value="0.75">75%</option>
-                        <option value="0.8">80%</option>
-                        <option value="0.85">85%</option>
-                        <option value="0.9">90%</option>
-                    <option value="1">100% (完全無効)</option>
-                </select>
-                </div>
-                <div class="input-group">
-                    <label for="inputL">回復L字消し個数 (1個5%軽減)</label>
-                    <input id="inputL" min="0" step="1" type="number" value="0" />
-                </div>
-                <div id="results">
-                    <h2>計算結果</h2>
-                    <p id="totalReductionRate"></p>
-                    <table class="results-table" id="resultsTable">
-                        <thead>
-                            <tr>
-                                <th>フロアの割合ダメージ</th>
-                                <th>最終的なHPに対するダメージ割合</th>
-                                <th>耐えれるか</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
+            <div class="popup-wrapper hidden" id="notificationPopup">
+                <div class="popup-overlay" id="popupOverlay"></div>
+                <div class="popup-content">
+                    <h2>お知らせ</h2>
+                    <div id="notification-list"></div>
+                    <button id="popupCloseButton">閉じる</button>
                 </div>
             </div>
 
-            <!-- 経験値・HP計算機能は削除されました -->
-        </div>
+            <div class="popup-wrapper hidden" id="links-popup" aria-hidden="true">
+                <div class="popup-overlay" id="links-popup-overlay"></div>
+                <div class="popup-content" role="dialog" aria-labelledby="links-popup-title">
+                   <h2 id="links-popup-title">外部リンク</h2>
+                   <div id="links-popup-list" style="margin-bottom:16px;">
+                        <button id="links-popup-close-button">閉じる</button>
+                   </div>
+                </div>
+            </div>
 
+            <div class="container">
+                <h1>β版 割合計算ツール(TP版)</h1>
+                
+                <div class="tabs">
+                    <button class="tab-button active" data-tab="damage">割合計算</button>
+                </div>
+                
+                <div class="tab-content" id="damage">
+                    <div class="input-group">
+                        <label for="dungeonSelect">ダンジョン選択:</label>
+                        <select id="dungeonSelect"></select>
+                    </div>
+                    <div id="results">
+                        <h2>計算結果</h2>
+                        <p id="totalReductionRate"></p>
+                        <table class="results-table" id="resultsTable">
+                            <thead>
+                                <tr>
+                                    <th>フロアの割合ダメージ</th>
+                                    <th>最終的なHPに対するダメージ割合</th>
+                                    <th>耐えれるか</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        
+        </div> 
         <script src="script.js" defer></script>
     </body>
 </html>
