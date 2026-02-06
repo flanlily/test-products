@@ -1,5 +1,130 @@
-/* 経験値/HP計算関連のスタイルは削除されました */
-/* お知らせアイコン＋データ同期ボタン横並び・右上固定 */
+/* ▼▼▼ カラー変数と基本設定 (Light Novel Dataより移植) ▼▼▼ */
+:root {
+    --bg-color: #0d1117;        /* 背景色 */
+    --card-bg: #161b22;         /* カード背景 */
+    --border-color: #30363d;    /* 枠線 */
+    --text-main: #c9d1d9;       /* メイン文字色 */
+    --text-sub: #8b949e;        /* サブ文字色 */
+    --accent-color: #58a6ff;    /* アクセント（青） */
+    --success-color: #238636;   /* 緑（所持・成功） */
+    --danger-color: #da3633;    /* 赤（未所持・エラー） */
+}
+
+/* 背景の全幅表示対応 */
+html, body {
+    height: 100%;
+}
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    margin: 0;
+    /* 背景色はダークテーマ変数を適用 */
+    background-color: var(--bg-color);
+    color: var(--text-main); /* 文字色も白系に */
+    min-height: 100vh;
+    display: block;
+    padding: 12px 12px 40px 12px;
+
+    /* 背景画像設定（既存維持） */
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center center;
+    background-attachment: fixed;
+}
+
+/* ▼▼▼ 修正：ログイン画面スタイル (Dark Theme) ▼▼▼ */
+#login-view {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--bg-color); /* ダーク背景 */
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+#login-view.hidden {
+    display: none !important;
+}
+
+.login-box {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    padding: 40px;
+    border-radius: 8px;
+    text-align: center;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+}
+
+.login-box h2 {
+    margin-bottom: 20px;
+    color: var(--accent-color);
+    font-size: 1.5rem;
+    border-bottom: none; /* 既存スタイルの打ち消し */
+    display: block;      /* 既存スタイルの打ち消し */
+}
+
+.login-box p {
+    color: var(--text-sub);
+    margin-bottom: 20px;
+}
+
+.login-box input {
+    display: block;
+    width: 100%;
+    margin-bottom: 15px;
+    padding: 12px;
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+    border-radius: 6px;
+    font-size: 1rem;
+    box-sizing: border-box;
+}
+
+.login-box input:focus {
+    border-color: var(--accent-color);
+    outline: none;
+}
+
+.login-box button {
+    background-color: var(--success-color); /* 緑色ボタン */
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    width: 100%;
+    font-size: 1rem;
+    transition: 0.2s;
+    margin-top: 0; /* 既存調整 */
+}
+
+.login-box button:hover {
+    opacity: 0.9;
+}
+
+.login-box button:disabled {
+    background-color: var(--border-color);
+    cursor: not-allowed;
+}
+
+#login-msg {
+    color: var(--danger-color);
+    margin-top: 15px;
+    font-size: 0.9em;
+    min-height: 1.2em;
+}
+/* ▲▲▲ ログイン画面スタイルここまで ▲▲▲ */
+
+
+/* ===== 以下、計算ツール本体のスタイル (ダークモード対応調整済み) ===== */
+
 .notification-sync-bar {
     position: fixed;
     top: 15px;
@@ -11,86 +136,46 @@
     flex-wrap: nowrap;
 }
 
-/* ▼▼▼【ここから修正箇所】▼▼▼ */
-/* 背景の全幅表示対応: html/body の高さを確保し、bodyの背景表示をcoverで行う */
-html, body {
-    height: 100%;
-}
-body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    margin: 0;
-    /* 背景色はデフォルトで設定し、JSで上書きする */
-    background-color: #1565c0;
-    color: #fff;
-    min-height: 100vh;
-    display: block;
-    padding: 12px 12px 40px 12px; /* 上寄せにして下に余白を確保 */
-
-    /* 背景画像: 常に画面全体をカバーする設定 */
-    background-repeat: no-repeat;
-    background-size: cover;         /* 画像を縦横比を保って画面全体に表示 */
-    -webkit-background-size: cover; /* 古い iOS 対応 */
-    background-position: center center; /* 中央を基準に表示 */
-    /* 固定にするとスクロール時に背景が動かない（見切れ対策に有効）。不要なら 'scroll' に戻す */
-    background-attachment: fixed;
-
-     /* 背景画像のスタイルをJS側で設定するため、こちらからは削除
-         フォールバック色は黒にして、画像未読込時に青い帯が出ないようにする */
-     background-color: #000; /* 画像が無い/小さい場合のフォールバック */
-    
-}
-
-/* コンテナを少しだけ上に寄せる（モバイルでタブ切替時に上部が表示されやすくする） */
+/* コンテナを少し上に */
 .container {
     margin-top: 18px;
-}
-
-/* ----- モバイルでの長押し選択やハイライトを抑制 (入力欄は除外) ----- */
-/* 非入力要素のテキスト選択を無効にすることで長押しメニューや選択ハンドルを消す */
-*:not(input):not(textarea):not(select) {
-    -webkit-user-select: none; /* iOS/Safari */
-    -webkit-touch-callout: none; /* iOS長押しメニュー */
-    user-select: none;
-}
-
-/* ボタンやリンクは通常通り操作できるようにする */
-button, a {
-    -webkit-user-select: text;
-    user-select: text;
-}
-
-/* タブやコンテナのスクロール補正のため、タッチアクションは自動 */
-.tabs, .tab-content {
-    touch-action: auto;
-}
-/* ▲▲▲【ここまで修正箇所】▲▲▲ */
-
-.container {
     max-width: 95vw;
     width: 100%;
     margin: 0 auto;
-    background: rgba(227, 242, 253, 0.7); /* 薄い青色+透過 */
+    /* 背景をダークカード色に合わせる */
+    background: rgba(22, 27, 34, 0.9); 
     padding: 18px 8px 28px 8px;
     border-radius: 16px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.4);
     display: flex;
     flex-direction: column;
     align-items: center;
-    box-sizing: border-box; /* 安定のため */
+    box-sizing: border-box;
+    border: 1px solid var(--border-color);
 }
 
 h1, h2 {
-    color: #e3f2fd;
-    border-bottom: 2px solid #1976d2;
+    color: var(--text-main);
+    border-bottom: 2px solid var(--border-color);
     padding-bottom: 8px;
     margin-bottom: 18px;
     width: 100%;
     text-align: center;
-    word-break: break-word; /* 長いタイトル対策 */
+    word-break: break-word;
 }
 
-p, .note {
-    color: #e3f2fd;
+/* テキスト選択無効化 (入力以外) */
+*:not(input):not(textarea):not(select) {
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    user-select: none;
+}
+button, a {
+    -webkit-user-select: text;
+    user-select: text;
+}
+.tabs, .tab-content {
+    touch-action: auto;
 }
 
 .input-group {
@@ -104,19 +189,20 @@ p, .note {
     display: block;
     margin-bottom: 4px;
     font-weight: bold;
-    color: #bbdefb;
-    word-break: break-word; /* ラベル長文対応 */
+    color: var(--accent-color); /* 青アクセント */
+    word-break: break-word;
 }
 
 .input-group select,
 .input-group input[type="number"] {
     width: 100%;
     padding: 10px;
-    border: 1.5px solid #64b5f6;
+    border: 1px solid var(--border-color);
     border-radius: 6px;
     font-size: 17px;
-    background: rgba(255,255,255,0.93);
-    color: #0d47a1;
+    /* 入力欄もダークに */
+    background: var(--bg-color);
+    color: var(--text-main);
     margin-bottom: 2px;
     box-sizing: border-box;
     outline: none;
@@ -125,21 +211,21 @@ p, .note {
 
 .input-group select:focus,
 .input-group input[type="number"]:focus {
-    border-color: #1976d2;
+    border-color: var(--accent-color);
 }
 
-/* 共通ボタンスタイル（同期ボタンと外部リンクボタンを揃えるため） */
+/* 共通ボタンスタイル */
 #syncButton,
 #external-links-button {
-    background: linear-gradient(90deg, #e3f2fd 60%, #bbdefb 100%);
-    color: #1976d2;
-    border: 1.5px solid #90caf9;
+    background: #21262d; /* ダークボタン */
+    color: var(--accent-color);
+    border: 1px solid var(--border-color);
     border-radius: 7px;
     font-size: 1em;
     font-weight: bold;
     padding: 8px 18px;
     margin: 0;
-    box-shadow: 0 2px 8px rgba(33,150,243,0.10);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
     transition: background 0.2s, color 0.2s;
     width: auto;
     max-width: none;
@@ -149,88 +235,67 @@ p, .note {
     gap: 4px;
     flex-shrink: 0;
 }
-
 #syncButton:hover,
-#syncButton:focus,
-#external-links-button:hover,
-#external-links-button:focus {
-    background: linear-gradient(90deg, #bbdefb 60%, #90caf9 100%);
-    color: #0d47a1;
-    outline: none;
+#external-links-button:hover {
+    background: #30363d;
+    color: #fff;
 }
 
+/* 結果テーブル */
 .results-table {
     width: 100%;
     max-width: 400px;
     border-collapse: collapse;
     margin-top: 18px;
-    background: rgba(255,255,255,0.97);
-    color: #0d47a1;
+    background: var(--bg-color);
+    color: var(--text-main);
     border-radius: 8px;
     overflow: hidden;
     font-size: 15px;
+    border: 1px solid var(--border-color);
 }
-
 .results-table th,
 .results-table td {
-    border: 1px solid #90caf9;
+    border: 1px solid var(--border-color);
     padding: 8px;
     text-align: center;
     word-break: break-word;
 }
-
 .results-table th {
-    background: #bbdefb;
-    color: #0d47a1;
+    background: #21262d;
+    color: var(--text-main);
     font-weight: bold;
 }
-
 .results-table tr:nth-child(even) {
-    background: #e3f2fd;
+    background: #161b22;
 }
-
 .results-table .can-withstand {
-    color: #2e7d32;
+    color: var(--success-color);
     font-weight: bold;
 }
-
 .results-table .cannot-withstand {
-    color: #c62828;
+    color: var(--danger-color);
     font-weight: bold;
 }
 
-.note {
-    font-size: 0.92em;
-    color: #b3e5fc;
-    margin-top: 18px;
-    border-top: 1px solid #1976d2;
-    padding-top: 12px;
-    width: 100%;
-    max-width: 400px;
-    text-align: left;
-    background: none;
-    box-sizing: border-box;
-}
-
-/* 追加：タブボタン */
+/* タブボタン */
 .tabs {
     display: flex;
-    justify-content: center; /* 中央寄せ */
+    justify-content: center;
     gap: 8px;
-    flex-wrap: nowrap; /* 折り返さない */
-    overflow-x: hidden; /* 横スクロール禁止 */
-    max-width: 100vw;   /* 画面幅内に */
+    flex-wrap: nowrap;
+    overflow-x: hidden;
+    max-width: 100vw;
     box-sizing: border-box;
-    padding: 0 12px;    /* 左右少し余白 */
+    padding: 0 12px;
 }
-
 .tab-button {
     flex: 1 1 0;
     max-width: 200px;
-    background: linear-gradient(90deg, #e3f2fd 60%, #bbdefb 100%);
-    border: none;
+    background: #21262d;
+    border: 1px solid var(--border-color);
     border-radius: 6px;
-    color: #1976d2;
+    color: var(--text-sub);
     cursor: pointer;
     font-weight: bold;
     padding: 10px 20px;
@@ -239,176 +304,68 @@ p, .note {
     user-select: none;
     white-space: nowrap;
 }
-
 .tab-button.active {
-    background: linear-gradient(90deg, #bbdefb 60%, #90caf9 100%);
-    box-shadow: 0 0 10px #90caf9;
+    background: #30363d;
+    color: var(--accent-color);
+    border-bottom: 2px solid var(--accent-color);
 }
-
-.tab-button:focus {
-    outline: 2px solid #64b5f6;
-}
-
-/* タブコンテンツの表示・非表示 */
 .tab-content.hidden {
     display: none;
 }
-
-/* HP計算タブ関連スタイルは削除されました */
-
-/* input-group内のsmallタグ（説明文）の色を調整 */
 .input-group small {
-    color: #bbdefb;
+    color: var(--text-sub);
     font-weight: normal;
     display: block;
     margin-top: 4px;
     padding: 0 4px;
 }
 
-/* ------------------ スマホ用メディアクエリ ------------------ */
+/* スマホ用調整 */
 @media (max-width: 600px) {
-    body {
-        padding: 8px;
-    }
+    body { padding: 8px; }
     .container {
         padding: 16px 4vw 24px 4vw;
         border-radius: 12px;
         min-height: auto;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.14);
     }
-    h1, h2 {
-        font-size: 1.3em;
-        padding-bottom: 6px;
-        margin-bottom: 14px;
-    }
-    .input-group,
-    .results-table,
-    .note {
-        max-width: 100%;
-        font-size: 1em;
-    }
-    .input-group select,
-    .input-group input[type="number"] {
-        font-size: 16px;
-        padding: 8px;
-    }
-    .results-table th,
-    .results-table td {
-        font-size: 0.9em;
-        padding: 6px 4px;
-    }
-    button {
-        font-size: 1.1em;
-        padding: 12px 0;
-        max-width: 100%;
-    }
-    .tabs {
-        gap: 6px;
-        padding: 0 6px; /* スマホは左右余白少し減らす */
-    }
-    .tab-button {
-        flex: 1 1 0;
-        max-width: 150px;
-        padding: 10px 8px;
-        font-size: 1rem;
-        white-space: nowrap;
-        user-select: none;
-    }
-
-    .notification-sync-bar {
-        top: 8px;
-        right: 8px;
-        gap: 4px;
-        flex-wrap: nowrap;
-    }
-    .notification-icon {
-        width: 32px;
-        height: 32px;
-        min-width: 32px;
-        min-height: 32px;
-    }
-    #syncButton,
-    #external-links-button {
-        font-size: 0.92em;
-        padding: 6px 7px;
-        min-width: 0;
-    }
+    .input-group, .results-table { font-size: 1em; }
+    .input-group select, .input-group input[type="number"] { font-size: 16px; padding: 8px; }
+    .notification-sync-bar { top: 8px; right: 8px; gap: 4px; }
+    .notification-icon { width: 32px; height: 32px; }
+    #syncButton, #external-links-button { font-size: 0.92em; padding: 6px 7px; }
 }
 
-/* ===== ▼お知らせ機能スタイル ここから▼ ===== */
-/* お知らせアイコン */
+/* お知らせ機能・ポップアップ（色味をダークに調整） */
 .notification-icon {
     width: 40px;
     height: 40px;
-    background-color: rgba(255, 255, 255, 0.9);
+    background-color: var(--card-bg);
     border-radius: 50%;
     cursor: pointer;
     display: flex;
     justify-content: center;
     align-items: center;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    transition: transform 0.2s;
-    position: relative;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    border: 1px solid var(--border-color);
     flex-shrink: 0;
-}
-.notification-icon:hover {
-    transform: scale(1.1);
 }
 .notification-icon::before {
     content: '🔔';
     font-size: 24px;
 }
-.notification-icon.active::before {
-    animation: bell-ring 1.5s ease-in-out infinite;
-}
-@keyframes bell-ring {
-    0%, 50%, 100% { transform: rotate(0); }
-    10%, 30% { transform: rotate(-15deg); }
-    20%, 40% { transform: rotate(15deg); }
-}
-
-/* データ同期ボタン（スタイルは上の共通ボタンで適用） */
-/* #syncButton の個別ルールは不要になりましたが残しても安全です */
-
-@media (max-width: 600px) {
-    .notification-sync-bar {
-        top: 8px;
-        right: 8px;
-        gap: 4px;
-        flex-wrap: nowrap;
-    }
-    .notification-icon {
-        width: 32px;
-        height: 32px;
-        min-width: 32px;
-        min-height: 32px;
-    }
-    #syncButton {
-        font-size: 0.92em;
-        padding: 6px 7px;
-        min-width: 0;
-    }
-}
-
-
-/* 未読件数バッジ */
 .notification-badge {
     position: absolute;
     top: -5px;
     right: -5px;
-    background-color: #f44336; /* 赤色 */
+    background-color: var(--danger-color);
     color: white;
     border-radius: 50%;
     padding: 2px 6px;
     font-size: 12px;
-    font-weight: bold;
-    border: 2px solid white;
+    border: 2px solid var(--card-bg);
 }
-.notification-badge.hidden {
-    display: none;
-}
+.notification-badge.hidden { display: none; }
 
-/* ポップアップ */
 .popup-wrapper {
     position: fixed;
     top: 0;
@@ -420,89 +377,47 @@ p, .note {
     align-items: center;
     z-index: 2000;
 }
-.popup-wrapper.hidden {
-    display: none;
-}
-
-/* 背景オーバーレイ */
+.popup-wrapper.hidden { display: none; }
 .popup-overlay {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.6);
+    background-color: rgba(0, 0, 0, 0.7);
 }
-
-/* ポップアップ本体（既存） */
 .popup-content {
     position: relative;
-    background: #1e3c78;
-    color: #e3f2fd;
+    background: var(--card-bg);
+    color: var(--text-main);
     padding: 20px;
     border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
     width: 90%;
     max-width: 500px;
     max-height: 80vh;
     overflow-y: auto;
     z-index: 2001;
-    border: 1px solid #42a5f5;
+    border: 1px solid var(--accent-color);
 }
 .popup-content h2 {
-    margin-top: 0;
-    color: #bbdefb;
-    border-bottom: 1px solid #42a5f5;
-    padding-bottom: 10px;
+    color: var(--accent-color);
+    border-bottom: 1px solid var(--border-color);
 }
-
-/* ===== ▲お知らせ機能スタイル ここまで▲ ===== */
-
-/* ===== ▼外部リンクポップアップ（links-popup）専用スタイル ここから▼ ===== */
-/* 画像のような見た目に近づけるため、links-popup に特化したスタイルを追加 */
-#links-popup .popup-content {
-    background: linear-gradient(180deg, #0f3a6e 0%, #15355f 100%);
-    border-radius: 14px;
-    padding: 18px 18px 16px;
-    width: 92%;
-    max-width: 420px; /* 画像と近い幅 */
-    box-shadow: 0 8px 30px rgba(8,24,60,0.6);
-    border: 1px solid rgba(255,255,255,0.06);
-}
-
-/* ポップアップ見出しを中央で大きく */
-#links-popup .popup-content h2 {
-    text-align: center;
-    font-size: 1.35em;
-    margin: 6px 0 12px;
-    color: #e8f5ff;
-    font-weight: 700;
-}
-
-/* セクション見出し */
-#links-popup .section-title {
-    color: #bfe1ff;
-    font-weight: 700;
-    margin: 8px 0 8px;
-    padding-top: 6px;
-    padding-bottom: 6px;
-    border-bottom: 1px solid rgba(255,255,255,0.04);
-}
-
-/* リスト本体 */
-#links-popup-list {
+#popupCloseButton, #links-popup-close-button {
+    width: 100%;
+    padding: 12px;
     margin-top: 10px;
-    margin-bottom: 6px;
+    border-radius: 6px;
+    background: var(--bg-color);
+    color: var(--text-main);
+    border: 1px solid var(--border-color);
+    cursor: pointer;
 }
 
-/* リンクをボタン風に */
-#links-popup-list ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-#links-popup-list ul li {
-    margin: 8px 0;
+/* 外部リンクポップアップ調整 */
+#links-popup .popup-content {
+    background: #161b22;
 }
 #links-popup-list ul li a {
     display: block;
@@ -510,117 +425,12 @@ p, .note {
     padding: 12px 14px;
     background: rgba(255,255,255,0.04);
     border-radius: 8px;
-    color: #e8f5ff;
+    color: var(--accent-color);
     text-decoration: none;
     font-weight: 600;
-    box-shadow: inset 0 -1px rgba(255,255,255,0.02);
-    transition: background 0.12s ease, transform 0.06s ease;
-}
-#links-popup-list ul li a:hover {
-    background: rgba(255,255,255,0.07);
-    transform: translateY(-1px);
-}
-#links-popup-list ul li a:active {
-    transform: translateY(0);
-}
-
-/* リンクボタン内の文字を左寄せに（画像と同様） */
-#links-popup-list ul li a {
+    margin-bottom: 8px;
     text-align: left;
 }
-
-/* 閉じるボタン（links-popup）を大きく見せる */
-#links-popup-close-button {
-    width: 100%;
-    padding: 12px;
-    margin-top: 10px;
-    border-radius: 10px;
-    background: linear-gradient(90deg, #e3f2fd 10%, #bbdefb 100%);
-    color: #0d47a1;
-    font-weight: 800;
-    font-size: 1.03em;
-    border: none;
-    cursor: pointer;
-    box-shadow: 0 4px 12px rgba(6,40,80,0.24);
+#links-popup-list ul li a:hover {
+    background: rgba(255,255,255,0.08);
 }
-#links-popup-close-button:hover {
-    background: linear-gradient(90deg, #d0e9ff 10%, #9fc6f4 100%);
-}
-
-/* small の補助文（リンク下） */
-#links-popup .popup-content p.small-note {
-    color: #bcdff8;
-    font-size: 0.9em;
-    margin: 6px 0 0;
-}
-
-/* スマホで見た目を整える */
-@media (max-width: 480px) {
-    #links-popup .popup-content {
-        max-width: 360px;
-        padding: 14px;
-        border-radius: 12px;
-    }
-    #links-popup .popup-content h2 {
-        font-size: 1.2em;
-    }
-    #links-popup-list ul li a {
-        padding: 10px 12px;
-        border-radius: 8px;
-        font-size: 0.98em;
-    }
-    #links-popup-close-button {
-        padding: 10px;
-        font-size: 1em;
-    }
-}
-/* ===== ▲外部リンクポップアップ（links-popup）専用スタイル ここまで▲ ===== */
-
-/* ▼▼▼ ログイン画面用スタイル ▼▼▼ */
-#login-view {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: #1565c0; /* 背景色と合わせる */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 9999;
-}
-#login-view.hidden {
-    display: none;
-}
-.login-box {
-    background: rgba(255, 255, 255, 0.95);
-    padding: 30px;
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-    width: 90%;
-    max-width: 350px;
-    text-align: center;
-}
-.login-box h2 {
-    color: #1565c0;
-    border-bottom: 2px solid #1565c0;
-    margin-bottom: 20px;
-}
-.login-box button {
-    background: linear-gradient(90deg, #1976d2 0%, #1565c0 100%);
-    color: white;
-    border: none;
-    padding: 12px;
-    width: 100%;
-    font-size: 1.1em;
-    border-radius: 6px;
-    cursor: pointer;
-    margin-top: 10px;
-}
-.login-box button:hover {
-    opacity: 0.9;
-}
-.hidden {
-    display: none !important;
-}
-/* ▲▲▲ 追加ここまで ▲▲▲ */
